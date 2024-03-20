@@ -75,13 +75,13 @@ class SearchArea:
             col_idx = prev_target[1] + np.random.choice(range(-3, 3))
 
             # Ensure that the target is within the grid and not already occupied by another target
-            row_idx = max(0, min(row_idx, grid - 1))
-            col_idx = max(0, min(col_idx, grid - 1))
+            row_idx = max(0, min(row_idx, grid - 2))
+            col_idx = max(0, min(col_idx, grid - 2))
             while (row_idx, col_idx) in self.targets:
-                row_idx = prev_target[0] + np.random.choice(range(-3, 3))
-                col_idx = prev_target[1] + np.random.choice(range(-3, 3))
-                row_idx = max(0, min(row_idx, grid - 1))
-                col_idx = max(0, min(col_idx, grid - 1))
+                row_idx = prev_target[0] + np.random.choice(range(-2, 2))
+                col_idx = prev_target[1] + np.random.choice(range(-2, 2))
+                row_idx = max(0, min(row_idx, grid - 2))
+                col_idx = max(0, min(col_idx, grid - 2))
             self.targets[i] = (row_idx, col_idx)
 
     def start_search(self):
@@ -155,8 +155,7 @@ class SearchArea:
                     next_cell = cell
                     break
 
-        # If no next cell was found in the sorted cells, select the nearest cell to average 
-                # location of found cells to prevent the drone from getting stuck
+        # If no next cell was found in the sorted cells, select the nearest cell to average location of all drones to prevent the drone from getting stuck
         if next_cell is None:
             avg_row = sum(drone.current_cell[0] for drone in self.drones) / len(self.drones)
             avg_col = sum(drone.current_cell[1] for drone in self.drones) / len(self.drones)
@@ -213,9 +212,11 @@ class SearchArea:
         from matplotlib.patches import Patch
         legend_elements = [Patch(facecolor='magenta', edgecolor='magenta', label='Drone'),
                            Patch(facecolor='red', edgecolor='red', label='Target')]
-        plt.legend(handles=legend_elements, loc='upper right')
+        plt.legend(handles=legend_elements, bbox_to_anchor=(1.05,1), loc='best')
         
-        
+        # Add colorbar
+        #cbar = plt.colorbar()
+        #cbar.set_label('Color Label', rotation=270, labelpad=15)
         
         # Draw the current figure and show it
         plt.draw()
@@ -224,28 +225,6 @@ class SearchArea:
         # Pause for a short duration to observe the visualization
         plt.pause(0.75)
 
-        def assign_terrain_values(self, grid, max_cells, max_value):
-            # Initialize all cells with a terrain value of -1
-            for row in grid:
-                for cell in row:
-                    cell.terrain_features = -1
-            # Assign the maximum terrain value to the max_cells
-            for cell in max_cells:
-                cell.terrain_features = max_value
-            # Create a queue and add the max_cells to it
-            queue = deque(max_cells)
-            # While the queue is not empty
-            while queue:
-                # Remove a cell from the queue
-                cell = queue.popleft()
-                # For each neighboring cell
-                for neighbor in cell.neighbors:
-                    # If it has not been assigned a terrain value yet
-                    if neighbor.terrain_features == -1:
-                        # Assign it a terrain value that is one less than the terrain value of the removed cell
-                        neighbor.terrain_features = cell.terrain_features - 1
-                        # Add it to the queue
-                        queue.append(neighbor)
 
 
 def stay_time(self, grid, current_cell):
@@ -263,12 +242,9 @@ def stay_time(self, grid, current_cell):
 
 
 # Usage
-#grid_size = int(input("Enter the size of the grid: "))
-#num_drones = int(input("Enter the number of drones: "))
-#num_targets = int(input("Enter the number of targets: "))
-grid_size = 15
-num_drones = 8
-num_targets = 10
+grid_size = int(input("Enter the size of the grid: "))
+num_drones = int(input("Enter the number of drones: "))
+num_targets = int(input("Enter the number of targets: "))
 
 search_area = SearchArea(grid_size, num_drones, num_targets)
 # Distribute targets across the search area
