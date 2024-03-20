@@ -1,10 +1,10 @@
-## Final Project
+## FinalProject
 
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import random
-
+from collections import deque
 
 class Cell:
     def __init__(self, terrain_features, proximity_to_targets, distance_from_last):
@@ -19,17 +19,23 @@ class Drone:
         self.stay_time = []
 
 
-
-
 class SearchArea:
     def __init__(self, size, num_drones, num_targets):
-        # self.grid = np.array([[Cell(np.random.choice(range(10)), 0, 0) for _ in range(size)] for _ in range(size)])
-        # temp change to make it easier to test terrain = 0,1
-        self.grid = np.array([[Cell(np.random.choice(range(5)), 0, 0) for _ in range(size)] for _ in range(size)])
+        # Initialize all cells with a terrain value of -1
+        self.grid = np.array([[Cell(-1, 0, 0) for _ in range(size)] for _ in range(size)])
         self.drones = [Drone() for _ in range(num_drones)]
         self.targets = [None for _ in range(num_targets)]
         self.visited_cells = []
         self.found_targets = []
+
+        # Assign the maximum terrain value to a few cells
+        max_value = 4
+        max_cells = [(np.random.choice(range(size)), np.random.choice(range(size))) for _ in range(3)]
+        for row, col in max_cells:
+            self.grid[row][col].terrain_features = max_value
+
+        # Assign terrain values to the rest of the cells
+        self.assign_terrain_values(max_cells, max_value)
 
         # Randomly place drones on the grid
         for drone in self.drones:
@@ -37,6 +43,19 @@ class SearchArea:
             col_idx = np.random.choice(range(size))
             drone.current_cell = (row_idx, col_idx)
             self.visited_cells.append((row_idx, col_idx))
+
+    def assign_terrain_values(self, max_cells, max_value):
+        from collections import deque
+        queue = deque(max_cells)
+
+        while queue:
+            cell = queue.popleft()
+            row, col = cell
+            for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                new_row, new_col = row + dr, col + dc
+                if 0 <= new_row < len(self.grid) and 0 <= new_col < len(self.grid[0]) and self.grid[new_row][new_col].terrain_features == -1:
+                    self.grid[new_row][new_col].terrain_features = self.grid[row][col].terrain_features - 1
+                    queue.append((new_row, new_col))
 
     def distribute_targets(self):
         # Implement logic to distribute targets across the grid
@@ -59,8 +78,10 @@ class SearchArea:
             row_idx = max(0, min(row_idx, grid - 1))
             col_idx = max(0, min(col_idx, grid - 1))
             while (row_idx, col_idx) in self.targets:
-                row_idx = np.random.choice(range(grid))
-                col_idx = np.random.choice(range(grid))
+                row_idx = prev_target[0] + np.random.choice(range(-3, 3))
+                col_idx = prev_target[1] + np.random.choice(range(-3, 3))
+                row_idx = max(0, min(row_idx, grid - 1))
+                col_idx = max(0, min(col_idx, grid - 1))
             self.targets[i] = (row_idx, col_idx)
 
     def start_search(self):
@@ -110,7 +131,7 @@ class SearchArea:
                     # Check if the coordinates are within the grid
                     if 0 <= nnx < len(grid) and 0 <= nny < len(grid[0]):
                         # Calculate the fitness score
-                        fitness_score = grid[nnx][nny].terrain_features*0.5  # Add the terrain features
+                        fitness_score = grid[nnx][nny].terrain_features*0.25  # Add the terrain features
                         fitness_score -= abs(nnx - row_idx) + abs(nny - col_idx)  # Subtract the distance                    
                         
                         # Check if there are any found targets
@@ -134,10 +155,10 @@ class SearchArea:
                     next_cell = cell
                     break
 
-        # If no next cell was found in the sorted cells, select the nearest cell to average location of found cells to prevent the drone from getting stuck
+        # If no next cell was found in the sorted cells, select the nearest cell to average location of all drones to prevent the drone from getting stuck
         if next_cell is None:
-            avg_x = sum(cell[0] for cell in self.found_targets) / len(self.found_targets)
-            avg_y = sum(cell[1] for cell in self.found_targets) / len(self.found_targets)
+            avg_row = sum(drone.current_cell[0] for drone in self.drones) / len(self.drones)
+            avg_col = sum(drone.current_cell[1] for drone in self.drones) / len(self.drones)
 
             unvisited_cells = []
             for row in range(len(self.grid)):
@@ -146,7 +167,7 @@ class SearchArea:
                     if cell not in self.visited_cells:
                         unvisited_cells.append(cell)
 
-            nearest_cell = min(unvisited_cells, key=lambda cell: ((cell[0] - avg_x) ** 2 + (cell[1] - avg_y) ** 2) ** 0.5)
+            nearest_cell = min(unvisited_cells, key=lambda cell: ((cell[0] - avg_row) ** 2 + (cell[1] - avg_col) ** 2) ** 0.5)
 
             # Now nearest_cell is the nearest cell to the average location of found cells
             next_cell = nearest_cell    
@@ -183,12 +204,47 @@ class SearchArea:
                 self.targets.remove(drone.current_cell)
                 self.found_targets.append(drone.current_cell)
         
+        plt.title('Drone Search and Rescue Simulation')  # Add title
+
+        # Add legend
+        # You need to have some labeled plot elements to create a legend
+        # Here's an example of creating a legend for three labeled plot elements
+        from matplotlib.patches import Patch
+        legend_elements = [Patch(facecolor='magenta', edgecolor='magenta', label='Drone'),
+                           Patch(facecolor='red', edgecolor='red', label='Target')]
+        plt.legend(handles=legend_elements, loc='upper right')
+        
+        
+        
         # Draw the current figure and show it
         plt.draw()
         plt.show()
 
         # Pause for a short duration to observe the visualization
-        plt.pause(0.5)
+        plt.pause(0.75)
+
+        def assign_terrain_values(self, grid, max_cells, max_value):
+            # Initialize all cells with a terrain value of -1
+            for row in grid:
+                for cell in row:
+                    cell.terrain_features = -1
+            # Assign the maximum terrain value to the max_cells
+            for cell in max_cells:
+                cell.terrain_features = max_value
+            # Create a queue and add the max_cells to it
+            queue = deque(max_cells)
+            # While the queue is not empty
+            while queue:
+                # Remove a cell from the queue
+                cell = queue.popleft()
+                # For each neighboring cell
+                for neighbor in cell.neighbors:
+                    # If it has not been assigned a terrain value yet
+                    if neighbor.terrain_features == -1:
+                        # Assign it a terrain value that is one less than the terrain value of the removed cell
+                        neighbor.terrain_features = cell.terrain_features - 1
+                        # Add it to the queue
+                        queue.append(neighbor)
 
 
 def stay_time(self, grid, current_cell):
@@ -204,8 +260,13 @@ def stay_time(self, grid, current_cell):
 
 
 
-grid_size = 20
-num_drones = 15
+
+# Usage
+#grid_size = int(input("Enter the size of the grid: "))
+#num_drones = int(input("Enter the number of drones: "))
+#num_targets = int(input("Enter the number of targets: "))
+grid_size = 15
+num_drones = 8
 num_targets = 10
 
 search_area = SearchArea(grid_size, num_drones, num_targets)
@@ -213,4 +274,5 @@ search_area = SearchArea(grid_size, num_drones, num_targets)
 search_area.distribute_targets()
 # Visualize the initial search area
 search_area.visual()
+# Start the search
 search_area.start_search()
