@@ -23,9 +23,8 @@ class Drone:
 
 class SearchArea:
     def __init__(self, size, num_drones, num_targets):
-        # self.grid = np.array([[Cell(np.random.choice(range(10)), 0, 0) for _ in range(size)] for _ in range(size)])
-        # temp change to make it easier to test terrain = 0,1
-        self.grid = np.array([[Cell(np.random.choice(range(5)), 0, 0) for _ in range(size)] for _ in range(size)])
+        self.grid = np.array([[Cell(np.random.choice(range(5)), 0, 0) 
+                               for _ in range(size)] for _ in range(size)])
         self.drones = [Drone() for _ in range(num_drones)]
         self.targets = [None for _ in range(num_targets)]
         self.visited_cells = []
@@ -134,7 +133,8 @@ class SearchArea:
                     next_cell = cell
                     break
 
-        # If no next cell was found in the sorted cells, select the nearest cell to average location of found cells to prevent the drone from getting stuck
+        # If no next cell was found in the sorted cells, select the nearest cell to average 
+                # location of found cells to prevent the drone from getting stuck
         if next_cell is None:
             avg_x = sum(cell[0] for cell in self.found_targets) / len(self.found_targets)
             avg_y = sum(cell[1] for cell in self.found_targets) / len(self.found_targets)
