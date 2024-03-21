@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import random
 from collections import deque
+import time
 
 class Cell:
     def __init__(self, terrain_features, proximity_to_targets, distance_from_last):
@@ -85,12 +86,18 @@ class SearchArea:
             self.targets[i] = (row_idx, col_idx)
 
     def start_search(self):
+        start_time = time.time()
         while not self.all_targets_found():
             for drone in self.drones:
                 # Calculate the next cell for each drone
                 drone.current_cell = self.calculate_next_cell(self.grid, drone)
             # Update the search area
             self.visual()
+
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+
+        print(f"Time taken to find all targets: {elapsed_time} seconds")
 
     def all_targets_found(self):
         # Implement logic to check if all targets have been found
